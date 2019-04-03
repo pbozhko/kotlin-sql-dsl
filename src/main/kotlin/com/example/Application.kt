@@ -1,8 +1,16 @@
-# kotlin-sql-dsl
+package com.example
 
-####Select queries:
-```
-select {
+import com.example.sql.query.OrderDirection.ASC
+import com.example.sql.query.OrderDirection.DESC
+import com.example.sql.query.Where.Condition.*
+import com.example.sql.query.Where.Filter
+import com.example.sql.query.Where.Operand.AND
+import com.example.sql.query.Where.Operand.OR
+import com.example.sql.query.select
+
+fun main() {
+
+    val query = select {
         columns = setOf("id", "name", "age")
         from = "t_users"
         where {
@@ -21,6 +29,5 @@ select {
         limit = 10
     }
 
-#######
-SELECT id, name, age FROM t_users WHERE id NOT IN [1, 2, 3] age = 15 name LIKE %test% ORDER BY id, age DESC LIMIT 10
-```
+    println(query.buildSql())
+}

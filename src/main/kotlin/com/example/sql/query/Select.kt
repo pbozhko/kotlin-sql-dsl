@@ -2,17 +2,17 @@ package com.example.sql.query
 
 import com.example.exception.InvalidParameterException
 import com.example.sql.SqlQueryDslMarker
+import com.example.sql.query.Where.Filter
+import com.example.sql.query.Where.Operand
 
 @SqlQueryDslMarker
 class Select : Query {
 
-    var columns: List<String>? = null
+    var columns: Set<String>? = null
     var from: String? = null
-
-    var orderBy: List<String>? = null
     var limit: Int? = null
-
-    var where: Map<String, Any>? = null
+    var orderBy: OrderBy? = null
+    var where: Where? = null
 
     private fun handleColumns(): String =
         columns?.let {
@@ -33,9 +33,7 @@ class Select : Query {
         } ?: throw InvalidParameterException("Please specify table to select")
 
     private fun handleOrderBy(): String =
-        orderBy?.let {
-            "ORDER BY ${it.map { column -> column.trim() }.joinToString(", ")}"
-        } ?: ""
+        orderBy?.buildSql() ?: ""
 
     private fun handleLimit(): String =
         limit?.let {
@@ -45,15 +43,7 @@ class Select : Query {
         } ?: ""
 
     private fun handleWhere(): String =
-        where?.let {
-            val args = it.entries.map { entry ->
-                when (entry.value) {
-                    is Int, Long, Double, Float -> "${entry.key} = ${entry.value}"
-                    else -> "${entry.key} = '${entry.value}'"
-                }
-            }.joinToString(" AND ")
-            "WHERE $args"
-        } ?: ""
+        where?.buildSql() ?: ""
 
     override fun buildSql(): String {
         return listOf(
@@ -66,4 +56,18 @@ class Select : Query {
         ).filter { it.isNotEmpty() }
             .joinToString(" ")
     }
+
+    fun orderBy(block: OrderBy.() -> Map<String, OrderDirection>) {
+        orderBy = OrderBy().apply {
+            orders = block()
+        }
+    }
+
+    fun where(block: Where.() -> Map<Filter, Operand?>) {
+        where = Where().apply {
+            filters = block()
+        }
+    }
 }
+
+fun select(block: Select.() -> Unit): Query = Select().apply(block)
